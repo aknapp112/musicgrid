@@ -48,7 +48,7 @@ public class MusicGridClient {
     	String trackerURL = myProps.getProperty("host.tracker.url");
     	String torrentWatchDir = myProps.getProperty("torrent.watch.dir");
     	String torrentTempDir = myProps.getProperty("torrent.temp.dir");
-    	String torrentDest = myProps.getProperty("host.torrentDest");
+    	String torrentDest = myProps.getProperty("host.torrent.dest");
     	String pathToCreateTorrent = myProps.getProperty("path.to.createtorrent");
     	String pathToPython = myProps.getProperty("path.to.python");
     	
@@ -57,6 +57,7 @@ public class MusicGridClient {
     	
     	String torrentFile = args[0] + ".torrent";
     	String trackerName = args[1];
+    	// quotes added below for linux test
     	String directoryPath = args[2];
     	String pathToTorrent = torrentTempDir + directorySeperator + torrentFile;
     	String pathToWatch = torrentWatchDir + directorySeperator + torrentFile;
@@ -73,8 +74,17 @@ public class MusicGridClient {
     	System.out.println("Did not find our tracker, this torrent appears to be from an outside source.  Continuing...");
     	
     	//the tracker is not ours, so let's build the torrent!
-    	Process p = new ProcessBuilder(pathToPython, pathToCreateTorrent, "-o", torrentTempDir, directoryPath, trackerURL).start();
-    
+    	System.out.println("pathToPython = " + pathToPython);
+    	System.out.println("pathToCreateTorrent = " + pathToCreateTorrent);
+    	System.out.println("torrentTempDir = " + torrentTempDir);
+    	System.out.println("directoryPath = " + directoryPath);
+    	System.out.println("trackerURL = " + trackerURL);
+    	System.out.println("pathToTorrent = " + pathToTorrent);
+    	ProcessBuilder pb = new ProcessBuilder(pathToPython, pathToCreateTorrent, "-o", torrentTempDir, directoryPath, trackerURL);
+    	pb.redirectErrorStream(true);
+    	
+    	Process p = pb.start();
+    	    
     	InputStream is = p.getInputStream();
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
