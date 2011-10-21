@@ -31,15 +31,24 @@ import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
 import net.schmizz.sshj.xfer.FileSystemFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+
 /** This examples demonstrates how a remote command can be executed. */
 public class MusicGridClient {
 
     public static void main(String... args)
             throws IOException {
     	
+    	Logger log = LoggerFactory.getLogger(MusicGridClient.class);
     	Properties myProps = new Properties();
     	FileInputStream MyInputStream = new FileInputStream("mgc.props");
     	myProps.load(MyInputStream);
+    	
+    	log.info("Starting MusicGridClient!");
+    	log.info("loading properties from property file");
     	
     	String username = myProps.getProperty("user.name");
     	String password = myProps.getProperty("user.password");
@@ -62,27 +71,29 @@ public class MusicGridClient {
     	String pathToTorrent = torrentTempDir + directorySeperator + torrentFile;
     	String pathToWatch = torrentWatchDir + directorySeperator + torrentFile;
     	
+    	log.info("pathToPython = " + pathToPython);
+    	log.info("pathToCreateTorrent = " + pathToCreateTorrent);
+    	log.info("torrentTempDir = " + torrentTempDir);
+    	log.info("directoryPath = " + directoryPath);
+    	log.info("trackerURL = " + trackerURL);
+    	log.info("pathToTorrent = " + pathToTorrent);
+    	
     	int indexfound = trackerName.indexOf(trackerURL);
     		
     	//if greater than -1, means we found it
     	if (indexfound > -1){
-    		System.out.println("Our tracker was found, aborting.");
+    		log.info("Our tracker was found, aborting.");
     		//here's where we bail if we find our own tracker
     		System.exit(0);
     	}
     	
-    	System.out.println("Did not find our tracker, this torrent appears to be from an outside source.  Continuing...");
+    	log.info("Did not find our tracker, this torrent appears to be from an outside source.  Continuing...");
     	
     	//the tracker is not ours, so let's build the torrent!
-    	System.out.println("pathToPython = " + pathToPython);
-    	System.out.println("pathToCreateTorrent = " + pathToCreateTorrent);
-    	System.out.println("torrentTempDir = " + torrentTempDir);
-    	System.out.println("directoryPath = " + directoryPath);
-    	System.out.println("trackerURL = " + trackerURL);
-    	System.out.println("pathToTorrent = " + pathToTorrent);
     	ProcessBuilder pb = new ProcessBuilder(pathToPython, pathToCreateTorrent, "-o", torrentTempDir, directoryPath, trackerURL);
     	pb.redirectErrorStream(true);
     	
+    	log.info("Starting python!");
     	Process p = pb.start();
     	    
     	InputStream is = p.getInputStream();
@@ -90,10 +101,10 @@ public class MusicGridClient {
         BufferedReader br = new BufferedReader(isr);
         String line;
 
-        System.out.println("Output of running pycreatetorrent is: ");
+        log.info("Output of running pycreatetorrent is: ");
 
         while ((line = br.readLine()) != null) {
-        	System.out.println(line);
+        	log.info(line);
         }
         
         br.close();
@@ -115,15 +126,15 @@ public class MusicGridClient {
             final Session session = ssh.startSession();
             try {
             	//next we need to copy up the torrent file with scp
-            	System.out.println("Copying file " + pathToTorrent + " to " + hostname + ":");
+            	log.info("Copying file " + pathToTorrent + " to " + hostname + ":");
             	ssh.newSCPFileTransfer().upload(new FileSystemFile(pathToTorrent), torrentDest);
             	
             	//once transfer is complete, we want to update the rss feed
                 final Command cmd = session.exec(serverCmd + " " + "\"" + torrentFile + "\"");
-                System.out.println("Executing command: " + cmd + " on host " + hostname);
-                System.out.println(IOUtils.readFully(cmd.getInputStream()).toString());
+                log.info("Executing command: " + serverCmd + " on host " + hostname);
+                log.info(IOUtils.readFully(cmd.getInputStream()).toString());
                 cmd.join(5, TimeUnit.SECONDS);
-                System.out.println("\n** exit status: " + cmd.getExitStatus());
+                log.info("\n** exit status: " + cmd.getExitStatus());
             } finally {
                 session.close();
             }
@@ -135,17 +146,9 @@ public class MusicGridClient {
         File sourceFile = new File(pathToTorrent);
         File destFile = new File (pathToWatch);
         
+        log.info("Renaming file: " + sourceFile.getCanonicalPath() + " to: " + destFile.getCanonicalPath());
 		sourceFile.renameTo(destFile);
 		
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
 }
